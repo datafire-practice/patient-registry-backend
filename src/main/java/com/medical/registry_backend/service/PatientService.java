@@ -10,4 +10,5 @@ public interface PatientService {
     Patient savePatient(Patient patient);
     Patient updatePatient(Long id, Patient patient);
     void deletePatient(Long id);
+    void deleteAll(); // Добавлен метод для очистки базы
 }

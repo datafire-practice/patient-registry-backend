@@ -65,7 +65,7 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+			<scope>test</scope>
 		</dependency>
 		<!-- Utilities -->
 		<dependency>
@@ -86,13 +86,14 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.testng</groupId>
-			<artifactId>testng</artifactId>
-			<version>7.10.2</version>
-			<scope>compile</scope>
-		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>org.testng</groupId>-->
+<!--			<artifactId>testng</artifactId>-->
+<!--			<version>7.10.2</version>-->
+<!--			<scope>compile</scope>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
@@ -100,6 +101,10 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
 		</dependency>
 <!--		<dependency>-->
 <!--			<groupId>org.hamcrest</groupId>-->
@@ -123,6 +128,16 @@
 	</dependencies>
 
 	<build>
+		<testResources>
+		<testResource>
+			<directory>src/test/resources</directory>
+			<includes>
+				<include>**/*.yaml</include>
+				<include>**/*.xml</include>
+				<include>**/*.properties</include>
+			</includes>
+		</testResource>
+	</testResources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
@@ -156,7 +171,7 @@
 				<artifactId>liquibase-maven-plugin</artifactId>
 				<version>${liquibase.version}</version>
 				<configuration>
-					<changeLogFile>src/main/resources/db/changelog/db.changelog-master.yaml</changeLogFile>
+					<changeLogFile>src/main/resources/db/changelog/db.changelog-master.xml</changeLogFile>
 					<url>jdbc:postgresql://localhost:5432/medical_registry</url>
 					<username>postgres</username>
 					<password>password</password>

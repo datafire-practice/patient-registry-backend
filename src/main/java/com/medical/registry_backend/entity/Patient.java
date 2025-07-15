@@ -16,15 +16,15 @@ public class Patient {
     private Long id;
 
     @Column(nullable = false)
-    @Pattern(regexp = "^[А-Яа-я-]+$", message = "Фамилия должна содержать только кириллицу и дефис")
+    @Pattern(regexp = "^[А-Яа-яЁё-]+$", message = "Фамилия должна содержать только кириллицу и дефис")
     private String lastName;
 
     @Column(nullable = false)
-    @Pattern(regexp = "^[А-Яа-я-]+$", message = "Имя должно содержать только кириллицу и дефис")
+    @Pattern(regexp = "^[А-Яа-яЁё-]+$", message = "Имя должно содержать только кириллицу и дефис")
     private String firstName;
 
     @Column
-    @Pattern(regexp = "^[А-Яа-я-]*$", message = "Отчество должно содержать только кириллицу и дефис")
+    @Pattern(regexp = "^[А-Яа-яЁё-]*$", message = "Отчество должно содержать только кириллицу и дефис")
     private String middleName;
 
     @Column(nullable = false, length = 1)

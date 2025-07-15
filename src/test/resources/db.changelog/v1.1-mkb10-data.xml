@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.31.xsd">
+    <changeSet id="2" author="dev">
+        <loadData
+                tableName="mkb10"
+                file="data/mkb10.csv"
+                separator=","
+                usePreparedStatements="true">
+            <column name="code" type="STRING"/>
+            <column name="name" type="STRING"/>
+        </loadData>
+    </changeSet>
+</databaseChangeLog>
