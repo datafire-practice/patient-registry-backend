@@ -5,6 +5,7 @@ import com.medical.registry_backend.repository.Mkb10Repository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -13,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 @Service
 @RequiredArgsConstructor
@@ -22,8 +24,8 @@ public class Mkb10ServiceImpl implements Mkb10Service {
 
     @Cacheable("mkb10Cache")
     @Override
-    public List<Mkb10> getAllMkb10() {
-        return mkb10Repository.findAll();
+    public Page<Mkb10> getAllMkb10(Pageable pageable) {
+        return mkb10Repository.findAll(pageable);
     }
 
     @CacheEvict(value = "mkb10Cache", allEntries = true)

@@ -2,6 +2,7 @@ package com.medical.registry_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medical.registry_backend.entity.Mkb10;
+import com.medical.registry_backend.entity.Patient;
 import com.medical.registry_backend.service.Mkb10Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,17 +12,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,11 +50,9 @@ class Mkb10ControllerTest {
 
     @BeforeEach
     void setUp() {
-        Mkb10 mkb10 = new Mkb10();
-        mkb10.setCode("A00.0");
-        mkb10.setName("Холера");
-        List<Mkb10> mkb10List = Arrays.asList(mkb10);
-        when(mkb10Service.getAllMkb10()).thenReturn(mkb10List);
+        Mkb10 mkb10 = createSampleMkb10();
+        Page<Mkb10> page = new PageImpl<>(Collections.singletonList(mkb10));
+        when(mkb10Service.getAllMkb10(any(PageRequest.class))).thenReturn(page);
     }
 
     @Test
@@ -64,5 +69,11 @@ class Mkb10ControllerTest {
         assertTrue(mkb10Array.length > 0);
         assertEquals("A00.0", mkb10Array[0].getCode());
         assertEquals("Холера", mkb10Array[0].getName());
+    }
+    private Mkb10 createSampleMkb10() {
+        Mkb10 mkb10 = new Mkb10();
+        mkb10.setCode("A00.0");
+        mkb10.setName("Холера");
+        return mkb10;
     }
 }
