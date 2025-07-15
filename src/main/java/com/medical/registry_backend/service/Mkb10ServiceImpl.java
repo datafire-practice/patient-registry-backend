@@ -26,13 +26,14 @@ public class Mkb10ServiceImpl implements Mkb10Service {
         return mkb10Repository.findAll();
     }
 
-    @Override
     @CacheEvict(value = "mkb10Cache", allEntries = true)
-    @Scheduled(cron = "0 0 0 * * ?") // Ежедневно в полночь
+    @Scheduled(cron = "0 0 0 * * ?")
+    @Override
     public void updateMkb10FromCsv() {
         String csvContent = restTemplate.getForObject(
                 "https://raw.githubusercontent.com/ak4nv/mkb10/master/mkb10.csv", String.class);
         List<Mkb10> mkb10List = parseCsv(csvContent);
+        mkb10Repository.deleteAll();
         mkb10Repository.saveAll(mkb10List);
     }
 
@@ -44,10 +45,10 @@ public class Mkb10ServiceImpl implements Mkb10Service {
             while ((line = reader.readLine()) != null) {
                 if (firstLine) {
                     firstLine = false;
-                    continue; // Пропускаем заголовок
+                    continue;
                 }
-                String[] parts = line.split(";");
-                if (parts.length >= 2) {
+                String[] parts = line.split(";", -1);
+                if (parts.length >= 2 && parts[0].matches("^[A-Z]\\d{2}(\\.\\d)?$")) {
                     Mkb10 mkb10 = new Mkb10();
                     mkb10.setCode(parts[0].trim());
                     mkb10.setName(parts[1].trim());

@@ -11,6 +11,6 @@ public class Mkb10 {
     @Column(name = "code", length = 10)
     private String code;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String name;
 }

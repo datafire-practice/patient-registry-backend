@@ -33,12 +33,40 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
+    public Patient updatePatient(Long id, Patient patient) {
+        Patient existingPatient = getPatientById(id);
+        existingPatient.setLastName(patient.getLastName());
+        existingPatient.setFirstName(patient.getFirstName());
+        existingPatient.setMiddleName(patient.getMiddleName());
+        existingPatient.setGender(patient.getGender());
+        existingPatient.setBirthDate(patient.getBirthDate());
+        existingPatient.setInsuranceNumber(patient.getInsuranceNumber());
+        validatePatient(existingPatient);
+        return patientRepository.save(existingPatient);
+    }
+
+    @Override
     public void deletePatient(Long id) {
+        if (!patientRepository.existsById(id)) {
+            throw new EntityNotFoundException("Пациент с ID " + id + " не найден");
+        }
         patientRepository.deleteById(id);
     }
 
     private void validatePatient(Patient patient) {
-        if (patient.getBirthDate().isAfter(LocalDate.now())) {
+        if (patient.getLastName() == null || !patient.getLastName().matches("^[А-Яа-я\\s-]*$")) {
+            throw new IllegalArgumentException("Фамилия должна содержать только кириллицу, пробел и дефис");
+        }
+        if (patient.getFirstName() == null || !patient.getFirstName().matches("^[А-Яа-я\\s-]*$")) {
+            throw new IllegalArgumentException("Имя должно содержать только кириллицу, пробел и дефис");
+        }
+        if (patient.getMiddleName() != null && !patient.getMiddleName().matches("^[А-Яа-я\\s-]*$")) {
+            throw new IllegalArgumentException("Отчество должно содержать только кириллицу, пробел и дефис");
+        }
+        if (patient.getGender() == null || !patient.getGender().matches("^[МЖ]$")) {
+            throw new IllegalArgumentException("Пол должен быть 'М' или 'Ж'");
+        }
+        if (patient.getBirthDate() == null || patient.getBirthDate().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("Дата рождения не должна быть в будущем");
         }
         if (patient.getInsuranceNumber() == null || !patient.getInsuranceNumber().matches("\\d{16}")) {
