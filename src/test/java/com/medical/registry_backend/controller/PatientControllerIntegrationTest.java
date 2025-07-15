@@ -139,9 +139,7 @@ class PatientControllerIntegrationTest {
                 .andExpect(jsonPath("$.firstName").value("Петр"))
                 .andReturn();
 
-        // Вывод ответа для диагностики
         String content = result.getResponse().getContentAsString();
-        System.out.println("Response body (updatePatient): " + content);
 
         Patient responsePatient = objectMapper.readValue(content, Patient.class);
 
