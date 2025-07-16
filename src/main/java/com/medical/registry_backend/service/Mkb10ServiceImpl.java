@@ -42,16 +42,12 @@ public class Mkb10ServiceImpl implements Mkb10Service {
     @Override
     @Scheduled(cron = "0 0 2 * * ?")
     public void updateMkb10Data() {
-        System.out.println("update mkb10!");
         logger.info("Starting MKB10 data update from {}", MKB10_CSV_URL);
         try {
             List<Mkb10> mkb10List = parseMkb10Csv();
             if (!mkb10List.isEmpty()) {
-                // Очистка старых данных
                 mkb10Repository.deleteAll();
-                // Сохранение новых данных
                 mkb10Repository.saveAll(mkb10List);
-                // Очистка кэша
                 mkb10Cache.invalidateAll();
                 logger.info("Successfully updated MKB10 data with {} records", mkb10List.size());
             } else {
@@ -71,19 +67,24 @@ public class Mkb10ServiceImpl implements Mkb10Service {
             while ((line = reader.readLine()) != null) {
                 if (firstLine) {
                     firstLine = false;
-                    continue; // Пропускаем заголовок
+                    continue;
                 }
+                logger.debug("Processing CSV line: {}", line);
                 String[] parts = line.split(",", -1);
                 if (parts.length >= 4) {
                     String code = parts[2].replace("\"", "").trim();
                     String name = parts[3].replace("\"", "").trim();
-                    // Фильтрация кодов по шаблону AXX.X
                     if (CODE_PATTERN.matcher(code).matches() && !name.isEmpty()) {
+                        logger.debug("Parsed valid MKB10 entry: code={}, name={}", code, name);
                         Mkb10 mkb10 = new Mkb10();
                         mkb10.setCode(code);
                         mkb10.setName(name);
                         mkb10List.add(mkb10);
+                    } else {
+                        logger.debug("Skipped CSV entry: code={}, name={}", code, name);
                     }
+                } else {
+                    logger.warn("Invalid CSV line format: {}", line);
                 }
             }
         }
@@ -97,8 +98,6 @@ public class Mkb10ServiceImpl implements Mkb10Service {
 
     @Override
     public List<Mkb10> getAllMkb10() {
-        System.out.println("get all mkb10!");
-        updateMkb10Data();
         return mkb10Repository.findAll().stream()
                 .peek(mkb10 -> mkb10Cache.put(mkb10.getCode(), mkb10))
                 .toList();
@@ -108,6 +107,7 @@ public class Mkb10ServiceImpl implements Mkb10Service {
     public Page<Mkb10> getAllMkb10(Pageable pageable) {
         return mkb10Repository.findAll(pageable).map(mkb10 -> {
             mkb10Cache.put(mkb10.getCode(), mkb10);
+            System.out.println("Get_Service_MKB10!!!");
             return mkb10;
         });
     }

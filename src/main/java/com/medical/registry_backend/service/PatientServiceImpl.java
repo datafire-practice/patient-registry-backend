@@ -4,6 +4,8 @@ import com.medical.registry_backend.entity.Patient;
 import com.medical.registry_backend.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,14 +13,32 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
+    private static final Logger logger = LoggerFactory.getLogger(PatientServiceImpl.class);
 
     @Override
     public Page<Patient> getAllPatients(Pageable pageable) {
-        return patientRepository.findAll(pageable);
+        logger.info("Fetching patients with pageable: {}", pageable);
+        Page<Patient> page = patientRepository.findAll(pageable);
+        if (page.isEmpty()) {
+            logger.warn("No patients found for pageable: {}", pageable);
+        }
+        return page;
+    }
+
+    @Override
+    public List<Patient> getAllPatients() {
+        logger.info("Fetching all patients as list");
+        List<Patient> patients = patientRepository.findAll();
+        if (patients.isEmpty()) {
+            logger.warn("No patients found");
+        }
+        return patients;
     }
 
     @Override

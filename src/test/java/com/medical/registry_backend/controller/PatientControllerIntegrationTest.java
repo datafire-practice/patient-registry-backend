@@ -42,6 +42,7 @@ class PatientControllerIntegrationTest {
         samplePatient = createSamplePatient();
         // Очистка базы данных перед каждым тестом
         patientService.deleteAll();
+        System.out.println("Database cleared in setUp");
     }
 
     @Test
@@ -81,9 +82,10 @@ class PatientControllerIntegrationTest {
     @Test
     void getAllPatients() throws Exception {
         // Подготовка данных
-        patientService.savePatient(samplePatient);
+        Patient savedPatient = patientService.savePatient(samplePatient);
+        System.out.println("Saved patient ID: " + savedPatient.getId());
 
-        mockMvc.perform(get("/api/patients")
+        MvcResult result = mockMvc.perform(get("/api/patients")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -91,7 +93,11 @@ class PatientControllerIntegrationTest {
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].lastName").value("Иванов"))
                 .andExpect(jsonPath("$.content[0].firstName").value("Иван"))
-                .andExpect(jsonPath("$.totalElements").value(1));
+                .andExpect(jsonPath("$.page.totalElements").value(1)) // Обновленный путь
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        System.out.println("Response body: " + content);
     }
 
     @Test
