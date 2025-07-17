@@ -50,6 +50,8 @@ public class Mkb10ServiceImpl implements Mkb10Service {
         updateMkb10Data();
     }
 
+
+
     @Override
     @Scheduled(cron = "0 0 2 * * ?")
     public void updateMkb10Data() {
