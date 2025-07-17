@@ -1,7 +1,12 @@
 package com.medical.registry_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.medical.registry_backend.entity.Disease;
+import com.medical.registry_backend.entity.Mkb10;
 import com.medical.registry_backend.entity.Patient;
+import com.medical.registry_backend.repository.DiseaseRepository;
+import com.medical.registry_backend.repository.Mkb10Repository;
+import com.medical.registry_backend.repository.PatientRepository;
 import com.medical.registry_backend.service.PatientService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +35,15 @@ class PatientControllerIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
+    private Mkb10Repository mkb10Repository;
+
+    @Autowired
+    private DiseaseRepository diseaseRepository;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
@@ -39,26 +53,48 @@ class PatientControllerIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        diseaseRepository.deleteAll();
+        patientRepository.deleteAll();
+        mkb10Repository.deleteAll();
+
+        Mkb10 mkb10 = new Mkb10();
+        mkb10.setCode("A00.0");
+        mkb10.setName("Test Disease");
+        mkb10Repository.save(mkb10);
+
+        Patient patient = new Patient();
+        patient.setLastName("Генри");
+        patient.setFirstName("Ревирс");
+        patient.setGender("М");
+        patient.setBirthDate(LocalDate.of(1990, 1, 1));
+        patient.setInsuranceNumber("1234567890123456");
+        patientRepository.save(patient);
+
+        Disease disease = new Disease();
+        disease.setPatient(patient);
+        disease.setMkb10(mkb10);
+        disease.setStartDate(LocalDate.now());
+        disease.setPrescriptions("Test prescription");
+        disease.setSickLeaveIssued(false);
+        diseaseRepository.save(disease);
+
         samplePatient = createSamplePatient();
-        // Очистка базы данных перед каждым тестом
-        patientService.deleteAll();
-        System.out.println("Database cleared in setUp");
     }
 
     @Test
     void createPatient() throws Exception {
         String patientJson = """
-            {
-              "lastName": "Иванов",
-              "firstName": "Иван",
-              "middleName": "Иванович",
-              "gender": "М",
-              "birthDate": "1995-01-01",
-              "insuranceNumber": "1234567890123456"
-            }
-            """;
+                {
+                  "lastName": "Иванов",
+                  "firstName": "Иван",
+                  "middleName": "Иванович",
+                  "gender": "М",
+                  "birthDate": "1995-01-01",
+                  "insuranceNumber": "9876543210987654"
+                }
+                """;
 
-        MvcResult result = mockMvc.perform(post("/api/patients")
+        MvcResult result = mockMvc.perform(post("/patients")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(patientJson))
                 .andExpect(status().isOk())
@@ -76,36 +112,28 @@ class PatientControllerIntegrationTest {
         assertEquals("Иванович", responsePatient.getMiddleName());
         assertEquals("М", responsePatient.getGender());
         assertEquals(LocalDate.of(1995, 1, 1), responsePatient.getBirthDate());
-        assertEquals("1234567890123456", responsePatient.getInsuranceNumber());
+        assertEquals("9876543210987654", responsePatient.getInsuranceNumber());
     }
 
     @Test
     void getAllPatients() throws Exception {
-        // Подготовка данных
-        Patient savedPatient = patientService.savePatient(samplePatient);
-        System.out.println("Saved patient ID: " + savedPatient.getId());
-
-        MvcResult result = mockMvc.perform(get("/api/patients")
+        mockMvc.perform(get("/patients")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements").exists())
+                .andExpect(jsonPath("$.page.totalElements").value(1))
                 .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].lastName").value("Иванов"))
-                .andExpect(jsonPath("$.content[0].firstName").value("Иван"))
-                .andExpect(jsonPath("$.page.totalElements").value(1)) // Обновленный путь
-                .andReturn();
-
-        String content = result.getResponse().getContentAsString();
-        System.out.println("Response body: " + content);
+                .andExpect(jsonPath("$.content[0].lastName").value("Генри"))
+                .andExpect(jsonPath("$.content[0].firstName").value("Ревирс"));
     }
 
     @Test
     void getPatientById() throws Exception {
-        // Подготовка данных
         Patient savedPatient = patientService.savePatient(samplePatient);
 
-        MvcResult result = mockMvc.perform(get("/api/patients/" + savedPatient.getId())
+        MvcResult result = mockMvc.perform(get("/patients/" + savedPatient.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lastName").value("Иванов"))
@@ -123,21 +151,20 @@ class PatientControllerIntegrationTest {
 
     @Test
     void updatePatient() throws Exception {
-        // Подготовка данных
         Patient savedPatient = patientService.savePatient(samplePatient);
 
         String updatedPatientJson = """
-            {
-              "lastName": "Петров",
-              "firstName": "Петр",
-              "middleName": "Петрович",
-              "gender": "М",
-              "birthDate": "1990-02-02",
-              "insuranceNumber": "6543210987654322"
-            }
-            """;
+                {
+                  "lastName": "Петров",
+                  "firstName": "Петр",
+                  "middleName": "Петрович",
+                  "gender": "М",
+                  "birthDate": "1990-02-02",
+                  "insuranceNumber": "6543210987654322"
+                }
+                """;
 
-        MvcResult result = mockMvc.perform(put("/api/patients/" + savedPatient.getId())
+        MvcResult result = mockMvc.perform(put("/patients/" + savedPatient.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedPatientJson))
                 .andExpect(status().isOk())
@@ -146,7 +173,6 @@ class PatientControllerIntegrationTest {
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
-
         Patient responsePatient = objectMapper.readValue(content, Patient.class);
 
         assertNotNull(responsePatient);
@@ -161,85 +187,68 @@ class PatientControllerIntegrationTest {
 
     @Test
     void updatePatientWithInvalidData() throws Exception {
-        // Подготовка данных
         Patient savedPatient = patientService.savePatient(samplePatient);
 
         String invalidPatientJson = """
-            {
-              "lastName": "Petrov123",
-              "firstName": "Петр",
-              "middleName": "Петрович",
-              "gender": "М",
-              "birthDate": "1990-02-02",
-              "insuranceNumber": "6543210987654322"
-            }
-            """;
+                {
+                  "lastName": "Petrov123",
+                  "firstName": "Петр",
+                  "middleName": "Петрович",
+                  "gender": "М",
+                  "birthDate": "1990-02-02",
+                  "insuranceNumber": "6543210987654322"
+                }
+                """;
 
-        MvcResult result = mockMvc.perform(put("/api/patients/" + savedPatient.getId())
+        MvcResult result = mockMvc.perform(put("/patients/" + savedPatient.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidPatientJson))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.lastName").value("Фамилия должна содержать только кириллицу и дефис"))
                 .andReturn();
 
-        // Вывод ответа для диагностики
         String content = result.getResponse().getContentAsString();
         System.out.println("Response body (updatePatientWithInvalidData): " + content);
-
-        // Проверка ошибки валидации
-        mockMvc.perform(put("/api/patients/" + savedPatient.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidPatientJson))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.lastName").value("Фамилия должна содержать только кириллицу и дефис"));
     }
 
     @Test
     void deletePatient() throws Exception {
-        // Подготовка данных
         Patient savedPatient = patientService.savePatient(samplePatient);
 
-        mockMvc.perform(delete("/api/patients/" + savedPatient.getId())
+        mockMvc.perform(delete("/patients/" + savedPatient.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
 
-        // Проверка, что пациент удалён
         assertThrows(EntityNotFoundException.class, () -> patientService.getPatientById(savedPatient.getId()));
     }
 
     @Test
     void createPatientWithInvalidData() throws Exception {
         String invalidPatientJson = """
-            {
-              "lastName": "Ivanov123",
-              "firstName": "Иван",
-              "middleName": "Иванович",
-              "gender": "М",
-              "birthDate": "1995-01-01",
-              "insuranceNumber": "1234567890123456"
-            }
-            """;
+                {
+                  "lastName": "Ivanov123",
+                  "firstName": "Иван",
+                  "middleName": "Иванович",
+                  "gender": "М",
+                  "birthDate": "1995-01-01",
+                  "insuranceNumber": "9876543210987654"
+                }
+                """;
 
-        MvcResult result = mockMvc.perform(post("/api/patients")
+        MvcResult result = mockMvc.perform(post("/patients")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidPatientJson))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.lastName").value("Фамилия должна содержать только кириллицу и дефис"))
                 .andReturn();
 
-        // Вывод ответа для диагностики
         String content = result.getResponse().getContentAsString();
         System.out.println("Response body (createPatientWithInvalidData): " + content);
-
-        // Проверка ошибки валидации
-        mockMvc.perform(post("/api/patients")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidPatientJson))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.lastName").value("Фамилия должна содержать только кириллицу и дефис"));
     }
 
     @Test
     void getPatientByIdNotFound() throws Exception {
-        mockMvc.perform(get("/api/patients/999")
+        mockMvc.perform(get("/patients/999")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Пациент с ID 999 не найден"));
@@ -247,7 +256,7 @@ class PatientControllerIntegrationTest {
 
     @Test
     void deletePatientNotFound() throws Exception {
-        mockMvc.perform(delete("/api/patients/999")
+        mockMvc.perform(delete("/patients/999")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Пациент с ID 999 не найден"));
@@ -255,36 +264,26 @@ class PatientControllerIntegrationTest {
 
     @Test
     void createPatientWithDuplicateInsuranceNumber() throws Exception {
-        // Подготовка данных
-        patientService.savePatient(samplePatient);
-
         String duplicatePatientJson = """
-            {
-              "lastName": "Петров",
-              "firstName": "Петр",
-              "middleName": "Петрович",
-              "gender": "М",
-              "birthDate": "1990-02-02",
-              "insuranceNumber": "1234567890123456"
-            }
-            """;
+                {
+                  "lastName": "Смирнов",
+                  "firstName": "Алексей",
+                  "middleName": "Алексеевич",
+                  "gender": "М",
+                  "birthDate": "1980-10-10",
+                  "insuranceNumber": "1234567890123456"
+                }
+                """;
 
-        MvcResult result = mockMvc.perform(post("/api/patients")
+        MvcResult result = mockMvc.perform(post("/patients")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(duplicatePatientJson))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Data integrity violation"))
                 .andReturn();
 
-        // Вывод ответа для диагностики
         String content = result.getResponse().getContentAsString();
         System.out.println("Response body (createPatientWithDuplicateInsuranceNumber): " + content);
-
-        // Проверка ошибки
-        mockMvc.perform(post("/api/patients")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(duplicatePatientJson))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Data integrity violation"));
     }
 
     private Patient createSamplePatient() {
@@ -294,7 +293,7 @@ class PatientControllerIntegrationTest {
         patient.setMiddleName("Иванович");
         patient.setGender("М");
         patient.setBirthDate(LocalDate.of(1995, 1, 1));
-        patient.setInsuranceNumber("1234567890123456");
+        patient.setInsuranceNumber("9876543210987654"); // Уникальный номер
         return patient;
     }
 }
