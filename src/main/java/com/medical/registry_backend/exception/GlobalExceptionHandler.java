@@ -41,11 +41,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        String message = "Нарушение целостности данных";
+        if (ex.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
+            org.hibernate.exception.ConstraintViolationException cause = (org.hibernate.exception.ConstraintViolationException) ex.getCause();
+            if (cause.getConstraintName() != null && cause.getConstraintName().contains("uk_insurance_number")) {
+                message = "Пациент с таким номером страховки уже существует";
+            }
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse("Data integrity violation"));
+                .body(new ErrorResponse(message));
     }
 
-    // Новый обработчик для ResponseStatusException
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException ex) {
         return ResponseEntity.status(ex.getStatusCode())

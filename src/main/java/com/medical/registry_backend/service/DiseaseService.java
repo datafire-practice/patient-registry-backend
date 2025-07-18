@@ -5,9 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface DiseaseService {
-    Page<Disease> getDiseasesByPatientId(Long patientId, Pageable pageable);
-    Disease getDiseaseById(Long diseaseId);
-    Disease saveDisease(Long patientId, Disease disease);
+    Disease createDisease(Long patientId, Disease disease);
     Disease updateDisease(Long patientId, Long diseaseId, Disease disease);
-    void deleteDisease(Long diseaseId);
+    Disease getDiseaseById(Long patientId, Long diseaseId);
+    Page<Disease> getAllDiseases(Long patientId, Pageable pageable);
+    void deleteDisease(Long patientId, Long diseaseId);
 }
