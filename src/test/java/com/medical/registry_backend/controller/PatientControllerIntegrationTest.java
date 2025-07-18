@@ -29,8 +29,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -56,7 +56,7 @@ class PatientControllerIntegrationTest {
     @Autowired
     private PatientService patientService;
 
-    private Patient samplePatient;
+    private Long samplePatientId;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -83,148 +83,21 @@ class PatientControllerIntegrationTest {
         disease.setSickLeaveIssued(false);
         patient.setDiseases(List.of(disease));
 
-        mockMvc.perform(post("/patients")
+        MvcResult result = mockMvc.perform(post("/patients")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(patient)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.lastName").value("Генри"))
-                .andExpect(jsonPath("$.diseases[0].mkb10.code").value("A00.0"));
+                .andExpect(jsonPath("$.diseases[0].mkb10.code").value("A00.0"))
+                .andReturn();
 
-        samplePatient = createSamplePatient();
+        Patient savedPatient = objectMapper.readValue(result.getResponse().getContentAsString(), Patient.class);
+        samplePatientId = savedPatient.getId();
+        if (samplePatientId == null) {
+            throw new IllegalStateException("Sample patient ID is null, save operation failed");
+        }
     }
-//    @BeforeEach
-//    public void setUp() throws Exception {
-//        // Настройка ObjectMapper с модулем для Java 8 Time
-//        objectMapper = new ObjectMapper();
-//        objectMapper.registerModule(new JavaTimeModule());
-//
-//        // Очистка базы данных перед каждым тестом
-//        try {
-//            patientRepository.deleteAll();
-//            mkb10Repository.deleteAll();
-//            diseaseRepository.deleteAll();
-//            logger.info("Database cleared successfully");
-//        } catch (Exception e) {
-//            logger.error("Failed to clear database", e);
-//            throw new RuntimeException("Failed to clear database", e);
-//        }
-//
-//        // Создание и сохранение Mkb10
-//        Mkb10 mkb10 = new Mkb10();
-//        mkb10.setCode("A00.0");
-//        mkb10.setName("Test Disease");
-//        mkb10Repository.save(mkb10);
-//
-//        // Создание тестового пациента
-//        samplePatient = new Patient();
-//        samplePatient.setLastName("Генри");
-//        samplePatient.setFirstName("Ревирс");
-//        samplePatient.setGender("М");
-//        samplePatient.setBirthDate(LocalDate.of(1990, 1, 1));
-//        samplePatient.setInsuranceNumber("1234567890123456");
-//
-//        Disease disease = new Disease();
-//        disease.setStartDate(LocalDate.now());
-//        disease.setPrescriptions("Test prescription");
-//        disease.setSickLeaveIssued(false);
-//        disease.setPatient(samplePatient);
-//        disease.setMkb10(mkb10);
-//        samplePatient.getDiseases().add(disease);
-//
-//        // Сохранение данных через сервис
-//        try {
-//            patientService.savePatient(samplePatient);
-//            logger.info("Patient saved successfully via service: {}", samplePatient.getId());
-//        } catch (Exception e) {
-//            logger.error("Failed to save patient via service", e);
-//            throw new RuntimeException("Failed to save patient via service", e);
-//        }
-//
-//        // Проверка сохранения через контроллер
-//        try {
-//            String jsonPatient = objectMapper.writeValueAsString(samplePatient);
-//            logger.info("Sending patient data to controller: {}", jsonPatient);
-//            mockMvc.perform(MockMvcRequestBuilders.post("/patients")
-//                            .contentType(MediaType.APPLICATION_JSON)
-//                            .content(jsonPatient))
-//                    .andDo(MockMvcResultHandlers.print())
-//                    .andExpect(status().isOk())
-//                    .andExpect(jsonPath("$.lastName").value("Генри"))
-//                    .andExpect(jsonPath("$.firstName").value("Ревирс"));
-//            logger.info("Patient saved successfully via controller");
-//        } catch (Exception e) {
-//            logger.error("Failed to save patient via controller", e);
-//            throw new RuntimeException("Failed to save patient via controller", e);
-//        }
-//    }
-//    public void setUp() throws Exception {
-//        objectMapper = new ObjectMapper();
-//        objectMapper.registerModule(new JavaTimeModule());
-//
-//        // Очистка базы данных перед каждым тестом
-//        try {
-//            mockMvc.perform(MockMvcRequestBuilders.delete("/patients/clear"));
-//        } catch (Exception e) {
-//            throw new RuntimeException("Failed to clear patients", e);
-//        }
-//        // Создание тестовых данных
-//        Patient patient = new Patient();
-//        patient.setLastName("Генри");
-//        patient.setFirstName("Ревирс");
-//        patient.setGender("М");
-//        patient.setBirthDate(LocalDate.of(1990, 1, 1));
-//        patient.setInsuranceNumber("1234567890123456");
-//
-//        patient.setDiseases(new java.util.ArrayList<>()); // Инициализация списка diseases
-//        Mkb10 mkb10 = new Mkb10();
-//        mkb10.setCode("A00.0");
-//        mkb10.setName("Test Disease");
-//
-//        Disease disease = new Disease();
-//        disease.setStartDate(LocalDate.now());
-//        disease.setPrescriptions("Test prescription");
-//        disease.setSickLeaveIssued(false);
-//        disease.setPatient(patient);
-//        patient.getDiseases().add(disease);
-//
-//        try {
-//            mockMvc.perform(MockMvcRequestBuilders.post("/patients")
-//                    .contentType(MediaType.APPLICATION_JSON)
-//                    .content(objectMapper.writeValueAsString(patient)));
-//        } catch (Exception e) {
-//            throw new RuntimeException("Failed to save patient", e);
-//        }
-//    }
-//    void setUp() throws Exception {
-//        mockMvc.perform(MockMvcRequestBuilders.delete("/patients/clear"));
-//        diseaseRepository.deleteAll();
-//        patientRepository.deleteAll();
-//        mkb10Repository.deleteAll();
-//
-//        Mkb10 mkb10 = new Mkb10();
-//        mkb10.setCode("A00.0");
-//        mkb10.setName("Test Disease");
-//        mkb10Repository.save(mkb10);
-//
-//        Patient patient = new Patient();
-//        patient.setLastName("Генри");
-//        patient.setFirstName("Ревирс");
-//        patient.setGender("М");
-//        patient.setBirthDate(LocalDate.of(1990, 1, 1));
-//        patient.setInsuranceNumber("1234567890123456");
-//        patientRepository.save(patient);
-//
-//        Disease disease = new Disease();
-//        disease.setPatient(patient);
-//        disease.setMkb10(mkb10);
-//        disease.setStartDate(LocalDate.now());
-//        disease.setPrescriptions("Test prescription");
-//        disease.setSickLeaveIssued(false);
-//        diseaseRepository.save(disease);
-//
-//        samplePatient = createSamplePatient();
-//    }
 
     @Test
     void createPatient() throws Exception {
@@ -235,14 +108,15 @@ class PatientControllerIntegrationTest {
                   "middleName": "Иванович",
                   "gender": "М",
                   "birthDate": "1995-01-01",
-                  "insuranceNumber": "9876543210987654"
+                  "insuranceNumber": "9876543210987654",
+                  "diseases": []
                 }
                 """;
 
         MvcResult result = mockMvc.perform(post("/patients")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(patientJson))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.lastName").value("Иванов"))
                 .andExpect(jsonPath("$.firstName").value("Иван"))
                 .andReturn();
@@ -262,47 +136,47 @@ class PatientControllerIntegrationTest {
 
     @Test
     void getAllPatients() throws Exception {
-        System.out.println("=== Custom Message: Starting getAllPatients test ===!!!!!!!!!!!!!!!!!!!!!!!!!!!!"); // Ваша уникальная строка
+        System.out.println("=== Custom Message: Starting getAllPatients test ===!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         mockMvc.perform(get("/patients")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andDo(MockMvcResultHandlers.print()) // Добавляет вывод ответа в консоль
+                .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").exists())
                 .andExpect(jsonPath("$.page.totalElements").value(1))
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].lastName").value("Генри"))
-                .andExpect(jsonPath("$.content[0].firstName").value("Ревирс"));
+                .andExpect(jsonPath("$.content[0].firstName").value("Ревирс"))
+                .andExpect(jsonPath("$.content[0].diseases[0].mkb10.code").value("A00.0"));
     }
 
     @Test
     void getPatientById() throws Exception {
-        Long patientId = samplePatient.getId();
-        if (patientId == null) {
+        if (samplePatientId == null) {
             throw new IllegalStateException("Sample patient ID is null, save operation failed");
         }
 
-        MvcResult result = mockMvc.perform(get("/patients/" + patientId)
+        MvcResult result = mockMvc.perform(get("/patients/" + samplePatientId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lastName").value("Генри"))
                 .andExpect(jsonPath("$.firstName").value("Ревирс"))
+                .andExpect(jsonPath("$.diseases[0].mkb10.code").value("A00.0"))
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
         Patient responsePatient = objectMapper.readValue(content, Patient.class);
 
         assertNotNull(responsePatient);
-        assertEquals(patientId, responsePatient.getId());
+        assertEquals(samplePatientId, responsePatient.getId());
         assertEquals("Генри", responsePatient.getLastName());
         assertEquals("Ревирс", responsePatient.getFirstName());
     }
 
     @Test
     void updatePatient() throws Exception {
-        Long patientId = samplePatient.getId();
-        if (patientId == null) {
+        if (samplePatientId == null) {
             throw new IllegalStateException("Sample patient ID is null, save operation failed");
         }
 
@@ -313,11 +187,12 @@ class PatientControllerIntegrationTest {
                   "middleName": "Петрович",
                   "gender": "М",
                   "birthDate": "1990-02-02",
-                  "insuranceNumber": "6543210987654321"
+                  "insuranceNumber": "6543210987654321",
+                  "diseases": []
                 }
                 """;
 
-        MvcResult result = mockMvc.perform(put("/patients/" + patientId)
+        MvcResult result = mockMvc.perform(put("/patients/" + samplePatientId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedPatientJson))
                 .andExpect(status().isOk())
@@ -329,7 +204,7 @@ class PatientControllerIntegrationTest {
         Patient responsePatient = objectMapper.readValue(content, Patient.class);
 
         assertNotNull(responsePatient);
-        assertEquals(patientId, responsePatient.getId());
+        assertEquals(samplePatientId, responsePatient.getId());
         assertEquals("Петров", responsePatient.getLastName());
         assertEquals("Петр", responsePatient.getFirstName());
         assertEquals("Петрович", responsePatient.getMiddleName());
@@ -340,8 +215,7 @@ class PatientControllerIntegrationTest {
 
     @Test
     void updatePatientWithInvalidData() throws Exception {
-        Long patientId = samplePatient.getId();
-        if (patientId == null) {
+        if (samplePatientId == null) {
             throw new IllegalStateException("Sample patient ID is null, save operation failed");
         }
 
@@ -356,7 +230,7 @@ class PatientControllerIntegrationTest {
                 }
                 """;
 
-        MvcResult result = mockMvc.perform(put("/patients/" + patientId)
+        MvcResult result = mockMvc.perform(put("/patients/" + samplePatientId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidPatientJson))
                 .andExpect(status().isBadRequest())
@@ -369,16 +243,15 @@ class PatientControllerIntegrationTest {
 
     @Test
     void deletePatient() throws Exception {
-        Long patientId = samplePatient.getId();
-        if (patientId == null) {
+        if (samplePatientId == null) {
             throw new IllegalStateException("Sample patient ID is null, save operation failed");
         }
 
-        mockMvc.perform(delete("/patients/" + patientId)
+        mockMvc.perform(delete("/patients/" + samplePatientId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
 
-        assertThrows(EntityNotFoundException.class, () -> patientService.getPatientById(patientId));
+        assertThrows(EntityNotFoundException.class, () -> patientService.getPatientById(samplePatientId));
     }
 
     @Test
@@ -452,7 +325,7 @@ class PatientControllerIntegrationTest {
         patient.setMiddleName("Иванович");
         patient.setGender("М");
         patient.setBirthDate(LocalDate.of(1995, 1, 1));
-        patient.setInsuranceNumber("9876543210987654"); // Уникальный номер
-        return patient;
+        patient.setInsuranceNumber("9876543210987654");
+        return patientService.savePatient(patient);
     }
 }

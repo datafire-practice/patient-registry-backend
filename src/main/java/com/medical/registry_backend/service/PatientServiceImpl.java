@@ -5,7 +5,6 @@ import com.medical.registry_backend.entity.Patient;
 import com.medical.registry_backend.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,8 +28,6 @@ public class PatientServiceImpl implements PatientService {
         Page<Patient> page = patientRepository.findAll(pageable);
         if (page.isEmpty()) {
             logger.warn("No patients found for pageable: {}", pageable);
-        } else {
-            page.getContent().forEach(this::initializePatient);
         }
         return page;
     }
@@ -41,8 +38,6 @@ public class PatientServiceImpl implements PatientService {
         List<Patient> patients = patientRepository.findAll();
         if (patients.isEmpty()) {
             logger.warn("No patients found");
-        } else {
-            patients.forEach(this::initializePatient);
         }
         return patients;
     }
@@ -51,21 +46,19 @@ public class PatientServiceImpl implements PatientService {
     public Patient getPatientById(Long id) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Пациент с ID " + id + " не найден"));
-        initializePatient(patient);
         return patient;
     }
 
     @Override
     public Patient savePatient(Patient patient) {
         try {
-            // Устанавливаем связь patient для каждого disease
             if (patient.getDiseases() != null) {
                 for (Disease disease : patient.getDiseases()) {
                     disease.setPatient(patient);
+                    validateDisease(disease);
                 }
             }
             Patient savedPatient = patientRepository.save(patient);
-            initializePatient(savedPatient);
             logger.info("Saved patient with ID: {}", savedPatient.getId());
             return savedPatient;
         } catch (DataIntegrityViolationException e) {
@@ -84,17 +77,16 @@ public class PatientServiceImpl implements PatientService {
         existingPatient.setGender(patient.getGender());
         existingPatient.setBirthDate(patient.getBirthDate());
         existingPatient.setInsuranceNumber(patient.getInsuranceNumber());
-        // Обновляем diseases
         if (patient.getDiseases() != null) {
             existingPatient.getDiseases().clear();
             for (Disease disease : patient.getDiseases()) {
                 disease.setPatient(existingPatient);
+                validateDisease(disease);
                 existingPatient.getDiseases().add(disease);
             }
         }
         try {
             Patient updatedPatient = patientRepository.save(existingPatient);
-            initializePatient(updatedPatient);
             logger.info("Updated patient with ID: {}", updatedPatient.getId());
             return updatedPatient;
         } catch (DataIntegrityViolationException e) {
@@ -119,10 +111,18 @@ public class PatientServiceImpl implements PatientService {
         logger.info("Deleted all patients");
     }
 
-    private void initializePatient(Patient patient) {
-        Hibernate.initialize(patient.getDiseases());
-        for (Disease disease : patient.getDiseases()) {
-            Hibernate.initialize(disease.getMkb10());
+    private void validateDisease(Disease disease) {
+        if (disease.getMkb10() == null) {
+            throw new IllegalArgumentException("Disease must have an associated Mkb10");
+        }
+        if (disease.getStartDate() == null) {
+            throw new IllegalArgumentException("Disease must have a start date");
+        }
+        if (disease.getPrescriptions() == null || disease.getPrescriptions().isBlank()) {
+            throw new IllegalArgumentException("Disease must have prescriptions");
+        }
+        if (disease.isSickLeaveIssued() == null) {
+            throw new IllegalArgumentException("Disease must specify sick leave issued status");
         }
     }
 }
