@@ -1,5 +1,6 @@
 package com.medical.registry_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,14 +16,14 @@ public class Disease {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "patient_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @NotNull
+    @JsonIgnore // Исключаем patient из сериализации и десериализации
     private Patient patient;
 
-    @ManyToOne
-    @JoinColumn(name = "mkb10_code", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @NotNull
+    @JoinColumn(name = "mkb10_code", nullable = false)
     private Mkb10 mkb10;
 
     @NotNull

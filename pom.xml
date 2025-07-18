@@ -20,7 +20,12 @@
 		<h2.version>2.2.224</h2.version>
 		<liquibase.version>4.31.1</liquibase.version>
 	</properties>
-
+	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo1.maven.org/maven2/</url>
+		</repository>
+	</repositories>
 <!--	<dependencyManagement>-->
 <!--		<dependencies>-->
 <!--			<dependency>-->
@@ -30,6 +35,16 @@
 <!--			</dependency>-->
 <!--		</dependencies>-->
 <!--	</dependencyManagement>-->
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.fasterxml.jackson.datatype</groupId>
+				<artifactId>jackson-datatype-hibernate5</artifactId>
+				<version>2.17.1</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
 		<!-- Spring Boot Starters -->
@@ -61,7 +76,10 @@
 			<artifactId>liquibase-core</artifactId>
 			<version>${liquibase.version}</version>
 		</dependency>
-
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
@@ -91,6 +109,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
+		</dependency>
+
+
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
 		</dependency>
 <!--		<dependency>-->
 <!--			<groupId>org.testng</groupId>-->
@@ -170,17 +194,40 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.liquibase</groupId>
-				<artifactId>liquibase-maven-plugin</artifactId>
-				<version>${liquibase.version}</version>
-				<configuration>
-					<changeLogFile>src/main/resources/db/changelog/db.changelog-master.xml</changeLogFile>
-					<url>jdbc:postgresql://localhost:5432/medical_registry</url>
-					<username>postgres</username>
-					<password>password</password>
-				</configuration>
-			</plugin>
+
 		</plugins>
 	</build>
+	<profiles>
+		<profile>
+			<id>test</id>
+			<properties>
+				<liquibase.url>jdbc:h2:mem:testdb</liquibase.url>
+				<liquibase.username>sa</liquibase.username>
+				<liquibase.password></liquibase.password>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.liquibase</groupId>
+						<artifactId>liquibase-maven-plugin</artifactId>
+						<version>${liquibase.version}</version>
+						<configuration>
+							<changeLogFile>src/main/resources/db/changelog/db.changelog-master.xml</changeLogFile>
+							<url>${liquibase.url}</url>
+							<username>${liquibase.username}</username>
+							<password>${liquibase.password}</password>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>process-test-resources</phase>
+								<goals>
+									<goal>update</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

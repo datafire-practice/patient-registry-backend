@@ -1,9 +1,11 @@
 package com.medical.registry_backend.service;
 
+import com.medical.registry_backend.entity.Disease;
 import com.medical.registry_backend.entity.Patient;
 import com.medical.registry_backend.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,6 +29,8 @@ public class PatientServiceImpl implements PatientService {
         Page<Patient> page = patientRepository.findAll(pageable);
         if (page.isEmpty()) {
             logger.warn("No patients found for pageable: {}", pageable);
+        } else {
+            page.getContent().forEach(this::initializePatient);
         }
         return page;
     }
@@ -37,21 +41,35 @@ public class PatientServiceImpl implements PatientService {
         List<Patient> patients = patientRepository.findAll();
         if (patients.isEmpty()) {
             logger.warn("No patients found");
+        } else {
+            patients.forEach(this::initializePatient);
         }
         return patients;
     }
 
     @Override
     public Patient getPatientById(Long id) {
-        return patientRepository.findById(id)
+        Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Пациент с ID " + id + " не найден"));
+        initializePatient(patient);
+        return patient;
     }
 
     @Override
     public Patient savePatient(Patient patient) {
         try {
-            return patientRepository.save(patient);
+            // Устанавливаем связь patient для каждого disease
+            if (patient.getDiseases() != null) {
+                for (Disease disease : patient.getDiseases()) {
+                    disease.setPatient(patient);
+                }
+            }
+            Patient savedPatient = patientRepository.save(patient);
+            initializePatient(savedPatient);
+            logger.info("Saved patient with ID: {}", savedPatient.getId());
+            return savedPatient;
         } catch (DataIntegrityViolationException e) {
+            logger.error("Data integrity violation while saving patient: {}", patient, e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data integrity violation");
         }
     }
@@ -66,9 +84,21 @@ public class PatientServiceImpl implements PatientService {
         existingPatient.setGender(patient.getGender());
         existingPatient.setBirthDate(patient.getBirthDate());
         existingPatient.setInsuranceNumber(patient.getInsuranceNumber());
+        // Обновляем diseases
+        if (patient.getDiseases() != null) {
+            existingPatient.getDiseases().clear();
+            for (Disease disease : patient.getDiseases()) {
+                disease.setPatient(existingPatient);
+                existingPatient.getDiseases().add(disease);
+            }
+        }
         try {
-            return patientRepository.save(existingPatient);
+            Patient updatedPatient = patientRepository.save(existingPatient);
+            initializePatient(updatedPatient);
+            logger.info("Updated patient with ID: {}", updatedPatient.getId());
+            return updatedPatient;
         } catch (DataIntegrityViolationException e) {
+            logger.error("Data integrity violation while updating patient with ID: {}", id, e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Data integrity violation");
         }
     }
@@ -76,13 +106,23 @@ public class PatientServiceImpl implements PatientService {
     @Override
     public void deletePatient(Long id) {
         if (!patientRepository.existsById(id)) {
+            logger.warn("Attempt to delete non-existent patient with ID: {}", id);
             throw new EntityNotFoundException("Пациент с ID " + id + " не найден");
         }
         patientRepository.deleteById(id);
+        logger.info("Deleted patient with ID: {}", id);
     }
 
     @Override
     public void deleteAll() {
         patientRepository.deleteAll();
+        logger.info("Deleted all patients");
+    }
+
+    private void initializePatient(Patient patient) {
+        Hibernate.initialize(patient.getDiseases());
+        for (Disease disease : patient.getDiseases()) {
+            Hibernate.initialize(disease.getMkb10());
+        }
     }
 }
