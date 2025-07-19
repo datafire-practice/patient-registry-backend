@@ -4,6 +4,8 @@ import com.medical.registry_backend.entity.Patient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface PatientService {
     Page<Patient> getAllPatients(Pageable pageable);
     Patient getPatientById(Long id);
@@ -11,4 +13,6 @@ public interface PatientService {
     Patient updatePatient(Long id, Patient patient);
     void deletePatient(Long id);
     void deleteAll(); // Добавлен метод для очистки базы
+    List<Patient> getAllPatients();
+
 }

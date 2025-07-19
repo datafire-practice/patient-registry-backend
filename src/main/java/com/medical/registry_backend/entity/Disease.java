@@ -1,8 +1,10 @@
 package com.medical.registry_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -15,38 +17,35 @@ public class Disease {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)
-    @NotNull
+    @NotNull(message = "Пациент обязателен")
+    @JsonBackReference // Предотвращает сериализацию patient
     private Patient patient;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mkb10_code", nullable = false)
-    @NotNull
+    @NotNull(message = "Код МКБ-10 обязателен")
     private Mkb10 mkb10;
 
-    @NotNull
-    @Column(nullable = false)
+    @NotNull(message = "Дата начала болезни обязательна")
+    @PastOrPresent(message = "Дата начала болезни не должна быть в будущем")
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
+    @PastOrPresent(message = "Дата окончания болезни не должна быть в будущем")
+    @Column(name = "end_date")
     private LocalDate endDate;
 
-    @NotNull
-    @Size(max = 1024)
-    @Column(nullable = false, length = 1024)
+    @NotBlank(message = "Назначения не должны быть пустыми")
+    @Column(nullable = false)
     private String prescriptions;
 
-    @NotNull
-    @Column(nullable = false)
+    @NotNull(message = "Статус выдачи больничного листа обязателен")
+    @Column(name = "sick_leave_issued", nullable = false)
     private Boolean sickLeaveIssued;
 
-    // Явный геттер
     public Boolean isSickLeaveIssued() {
         return sickLeaveIssued;
-    }
-
-    // Явный сеттер
-    public void setSickLeaveIssued(Boolean sickLeaveIssued) {
-        this.sickLeaveIssued = sickLeaveIssued;
     }
 }

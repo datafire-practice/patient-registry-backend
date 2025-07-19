@@ -1,11 +1,13 @@
 package com.medical.registry_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "mkb10")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Mkb10 {
     @Id
     @Column(name = "code", length = 10)

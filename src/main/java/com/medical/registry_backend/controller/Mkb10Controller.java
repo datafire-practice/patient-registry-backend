@@ -29,6 +29,7 @@ public class Mkb10Controller {
         if (page.isEmpty()) {
             logger.warn("No MKB10 data found for pageable: {}", pageable);
         }
+        System.out.println("Get_Controller_MKB10&&&&");
         return ResponseEntity.ok(page);
     }
 

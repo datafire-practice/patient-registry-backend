@@ -1,15 +1,19 @@
 package com.medical.registry_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @Entity
 @Table(name = "patients")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +42,7 @@ public class Patient {
     @Pattern(regexp = "^\\d{16}$", message = "Номер полиса должен содержать 16 цифр")
     private String insuranceNumber;
 
-    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Disease> diseases;
+    @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference // Управляет сериализацией diseases
+    private List<Disease> diseases = new ArrayList<>();
 }
