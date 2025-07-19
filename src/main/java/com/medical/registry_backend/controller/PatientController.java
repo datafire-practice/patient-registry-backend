@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/patients")
+@RequestMapping("/patient")
 @RequiredArgsConstructor
 public class PatientController {
     private final PatientService patientService;
