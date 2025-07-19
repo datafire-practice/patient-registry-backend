@@ -43,5 +43,6 @@ public class Patient {
     private String insuranceNumber;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Disease> diseases = new ArrayList<>(); // Инициализация пустым списком
+    @JsonManagedReference // Управляет сериализацией diseases
+    private List<Disease> diseases = new ArrayList<>();
 }

@@ -64,9 +64,20 @@ public class DiseaseController {
             @ApiResponse(responseCode = "404", description = "Заболевание или пациент не найдены")
     })
     @PutMapping("/{diseaseId}")
-    public ResponseEntity<Disease> updateDisease(@PathVariable("patient_id") Long patientId, @PathVariable Long diseaseId, @Valid @RequestBody Disease disease) {
-        logger.info("Updating disease ID: {} for patient ID: {}", diseaseId, patientId);
-        return ResponseEntity.ok(diseaseService.updateDisease(patientId, diseaseId, disease));
+    public ResponseEntity<Disease> updateDisease(@PathVariable("patient_id") Long patientId,
+                                                 @PathVariable Long diseaseId,
+                                                 @Valid @RequestBody Disease disease) {
+        logger.info("Received PUT request to update disease with ID {} for patient ID {}",
+                diseaseId, patientId);
+        try {
+            Disease updatedDisease = diseaseService.updateDisease(patientId, diseaseId, disease);
+            logger.info("Returning updated disease with ID {}", diseaseId);
+            return ResponseEntity.ok(updatedDisease);
+        } catch (Exception e) {
+            logger.error("Error updating disease with ID {} for patient ID {}: {}",
+                    diseaseId, patientId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Operation(summary = "Удалить заболевание")

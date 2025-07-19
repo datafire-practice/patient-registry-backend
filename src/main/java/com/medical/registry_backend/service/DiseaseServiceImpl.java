@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DiseaseServiceImpl implements DiseaseService {
@@ -28,8 +29,9 @@ public class DiseaseServiceImpl implements DiseaseService {
     }
 
     @Override
-    public Disease createDisease(Long patientId, Disease disease) {
-        logger.info("Creating disease for patient ID: {}", patientId);
+    @Transactional
+    public Disease saveDisease(Long patientId, Disease disease) {
+        logger.info("Saving disease for patient ID: {}", patientId);
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> {
                     logger.error("Patient with ID {} not found", patientId);
@@ -51,6 +53,7 @@ public class DiseaseServiceImpl implements DiseaseService {
     }
 
     @Override
+    @Transactional
     public Disease updateDisease(Long patientId, Long diseaseId, Disease disease) {
         logger.info("Updating disease ID: {} for patient ID: {}", diseaseId, patientId);
         Disease existingDisease = diseaseRepository.findById(diseaseId)
@@ -71,18 +74,26 @@ public class DiseaseServiceImpl implements DiseaseService {
                 });
         logger.debug("Found Mkb10: {}", mkb10);
 
+        // Обновляем поля существующего заболевания
         existingDisease.setMkb10(mkb10);
         existingDisease.setStartDate(disease.getStartDate());
         existingDisease.setEndDate(disease.getEndDate());
         existingDisease.setPrescriptions(disease.getPrescriptions());
         existingDisease.setSickLeaveIssued(disease.getSickLeaveIssued());
+        existingDisease.setPatient(existingDisease.getPatient()); // Сохраняем текущего пациента
 
-        Disease updatedDisease = diseaseRepository.save(existingDisease);
-        logger.info("Updated disease with ID: {}", updatedDisease.getId());
-        return updatedDisease;
+        try {
+            Disease updatedDisease = diseaseRepository.save(existingDisease);
+            logger.info("Updated disease with ID: {}", updatedDisease.getId());
+            return updatedDisease;
+        } catch (Exception e) {
+            logger.error("Error updating disease with ID {}: {}", diseaseId, e.getMessage(), e);
+            throw new RuntimeException("Ошибка при обновлении заболевания с ID " + diseaseId, e);
+        }
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Disease getDiseaseById(Long patientId, Long diseaseId) {
         logger.info("Fetching disease ID: {} for patient ID: {}", diseaseId, patientId);
         Disease disease = diseaseRepository.findById(diseaseId)
@@ -101,7 +112,8 @@ public class DiseaseServiceImpl implements DiseaseService {
     }
 
     @Override
-    public Page<Disease> getAllDiseases(Long patientId, Pageable pageable) {
+    @Transactional(readOnly = true)
+    public Page<Disease> getDiseasesByPatientId(Long patientId, Pageable pageable) {
         logger.info("Fetching all diseases for patient ID: {} with pageable: {}", patientId, pageable);
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> {
@@ -110,11 +122,12 @@ public class DiseaseServiceImpl implements DiseaseService {
                 });
 
         Page<Disease> diseases = diseaseRepository.findByPatientId(patientId, pageable);
-        logger.info("Found {} diseases for patient ID: {}", diseases.getTotalElements(), patientId);
+        logger.info("Found {} diseases for patient ID: {}: {}", diseases.getTotalElements(), patientId, diseases.getContent());
         return diseases;
     }
 
     @Override
+    @Transactional
     public void deleteDisease(Long patientId, Long diseaseId) {
         logger.info("Deleting disease ID: {} for patient ID: {}", diseaseId, patientId);
         Disease disease = diseaseRepository.findById(diseaseId)

@@ -47,7 +47,6 @@ class DiseaseControllerIntegrationTest {
     private Long samplePatientId;
     private Long sampleDiseaseId;
     private Mkb10 sampleMkb10;
-
     @BeforeEach
     void setUp() throws Exception {
         patientRepository.deleteAll();
@@ -58,7 +57,7 @@ class DiseaseControllerIntegrationTest {
         sampleMkb10.setCode("A00.0");
         sampleMkb10.setName("Test Disease");
         mkb10Repository.save(sampleMkb10);
-        System.out.println("Saved Mkb10: " + mkb10Repository.findById("A00.0").orElse(null));
+        System.out.println("Saved Mkb10: code=" + sampleMkb10.getCode());
 
         Patient patient = new Patient();
         patient.setLastName("Генри");
@@ -68,7 +67,7 @@ class DiseaseControllerIntegrationTest {
         patient.setInsuranceNumber("1234567890123456");
         patientRepository.save(patient);
         samplePatientId = patient.getId();
-        System.out.println("Saved Patient: " + patientRepository.findById(samplePatientId).orElse(null));
+        System.out.println("Saved Patient: id=" + samplePatientId + ", lastName=" + patient.getLastName());
 
         Disease disease = new Disease();
         disease.setPatient(patient);
@@ -78,9 +77,10 @@ class DiseaseControllerIntegrationTest {
         disease.setSickLeaveIssued(false);
         diseaseRepository.save(disease);
         sampleDiseaseId = disease.getId();
-        System.out.println("Saved Disease: " + diseaseRepository.findById(sampleDiseaseId).orElse(null));
+        Disease savedDisease = diseaseRepository.findById(sampleDiseaseId).orElse(null);
+        System.out.println("Saved Disease: id=" + (savedDisease != null ? savedDisease.getId() : null) +
+                ", prescriptions=" + (savedDisease != null ? savedDisease.getPrescriptions() : null));
     }
-
     @Test
     void createDisease() throws Exception {
         String diseaseJson = """
@@ -115,25 +115,25 @@ class DiseaseControllerIntegrationTest {
         assertEquals("A00.0", responseDisease.getMkb10().getCode());
         assertTrue(responseDisease.isSickLeaveIssued());
     }
-
     @Test
     void updateDisease() throws Exception {
         String updatedDiseaseJson = """
-                {
-                  "patient": {"id": %d},
-                  "mkb10": {"code": "A00.0"},
-                  "startDate": "%s",
-                  "endDate": "%s",
-                  "prescriptions": "Updated prescription",
-                  "sickLeaveIssued": true
-                }
-                """.formatted(samplePatientId, LocalDate.now().toString(), LocalDate.now().toString());
+        {
+          "patient": {"id": %d},
+          "mkb10": {"code": "A00.0"},
+          "startDate": "%s",
+          "endDate": "%s",
+          "prescriptions": "Updated prescription",
+          "sickLeaveIssued": true
+        }
+        """.formatted(samplePatientId, LocalDate.now().toString(), LocalDate.now().toString());
 
         MvcResult result = mockMvc.perform(put("/patient/" + samplePatientId + "/disease/" + sampleDiseaseId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedDiseaseJson))
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(sampleDiseaseId))
                 .andExpect(jsonPath("$.prescriptions").value("Updated prescription"))
                 .andExpect(jsonPath("$.mkb10.code").value("A00.0"))
                 .andExpect(jsonPath("$.endDate").value(LocalDate.now().toString()))
@@ -150,21 +150,25 @@ class DiseaseControllerIntegrationTest {
         assertEquals(LocalDate.now(), responseDisease.getEndDate());
         assertTrue(responseDisease.isSickLeaveIssued());
     }
-
     @Test
     void getAllDiseases() throws Exception {
-        mockMvc.perform(get("/patient/" + samplePatientId + "/disease")
+        System.out.println("Testing getAllDiseases for patient ID: " + samplePatientId);
+        MvcResult result = mockMvc.perform(get("/patient/" + samplePatientId + "/disease")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.page.totalElements").exists())
-                .andExpect(jsonPath("$.page.totalElements").value(1))
+                .andExpect(jsonPath("$.totalElements").exists())
+                .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].prescriptions").value("Test prescription"))
                 .andExpect(jsonPath("$.content[0].mkb10.code").value("A00.0"))
-                .andExpect(jsonPath("$.content[0].sickLeaveIssued").value(false));
+                .andExpect(jsonPath("$.content[0].sickLeaveIssued").value(false))
+                .andReturn();
+
+        String content = result.getResponse().getContentAsString();
+        System.out.println("getAllDiseases Response: " + content);
     }
 
     @Test

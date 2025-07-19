@@ -1,5 +1,6 @@
 package com.medical.registry_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +20,7 @@ public class Disease {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id", nullable = false)
     @NotNull(message = "Пациент обязателен")
+    @JsonBackReference // Предотвращает сериализацию patient
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,4 +44,8 @@ public class Disease {
     @NotNull(message = "Статус выдачи больничного листа обязателен")
     @Column(name = "sick_leave_issued", nullable = false)
     private Boolean sickLeaveIssued;
+
+    public Boolean isSickLeaveIssued() {
+        return sickLeaveIssued;
+    }
 }
