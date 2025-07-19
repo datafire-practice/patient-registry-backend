@@ -171,6 +171,7 @@ class DiseaseControllerIntegrationTest {
         System.out.println("getAllDiseases Response: " + content);
     }
 
+
     @Test
     void getDiseaseById() throws Exception {
         mockMvc.perform(get("/patient/" + samplePatientId + "/disease/" + sampleDiseaseId)
