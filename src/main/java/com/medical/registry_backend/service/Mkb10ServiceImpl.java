@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 public class Mkb10ServiceImpl implements Mkb10Service {
@@ -134,5 +136,19 @@ public class Mkb10ServiceImpl implements Mkb10Service {
             mkb10Cache.put(mkb10.getCode(), mkb10);
             return mkb10;
         });
+    }
+    @Override
+    public Page<Mkb10> searchMkb10ByCodeOrName(String search, Pageable pageable) {
+        logger.info("Searching MKB10 data with query: {}, pageable: {}", search, pageable);
+        if (search == null || search.trim().isEmpty()) {
+            logger.info("Search query is empty, returning all MKB10 data");
+            return getAllMkb10(pageable);
+        }
+        Page<Mkb10> result = mkb10Repository.findByCodeOrNameContainingIgnoreCase(search.trim(), pageable);
+        result.forEach(mkb10 -> mkb10Cache.put(mkb10.getCode(), mkb10));
+        if (result.isEmpty()) {
+            logger.warn("No MKB10 data found for search query: {}", search);
+        }
+        return result;
     }
 }
