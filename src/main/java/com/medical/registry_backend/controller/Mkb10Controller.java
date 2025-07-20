@@ -23,11 +23,11 @@ public class Mkb10Controller {
      * @return Страница с записями MKB10
      */
     @GetMapping
-    public ResponseEntity<Page<Mkb10>> getAllMkb10(Pageable pageable) {
-        logger.info("Fetching MKB10 data with pageable: {}", pageable);
-        Page<Mkb10> page = mkb10Service.getAllMkb10(pageable);
+    public ResponseEntity<Page<Mkb10>> getAllMkb10(Pageable pageable, @RequestParam(required = false) String search) {
+        logger.info("Fetching MKB10 data with pageable: {}, search: {}", pageable, search);
+        Page<Mkb10> page = mkb10Service.searchMkb10ByCodeOrName(search, pageable);
         if (page.isEmpty()) {
-            logger.warn("No MKB10 data found for pageable: {}", pageable);
+            logger.warn("No MKB10 data found for pageable: {}, search: {}", pageable, search);
         }
         System.out.println("Get_Controller_MKB10&&&&");
         return ResponseEntity.ok(page);

@@ -33,4 +33,5 @@ public interface Mkb10Service {
      * @return Страница с записями Mkb10
      */
     Page<Mkb10> getAllMkb10(Pageable pageable);
+    Page<Mkb10> searchMkb10ByCodeOrName(String search, Pageable pageable);
 }
