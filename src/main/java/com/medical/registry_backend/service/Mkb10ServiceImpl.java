@@ -108,7 +108,7 @@ public class Mkb10ServiceImpl implements Mkb10Service {
         return mkb10List;
     }
 
-    private BufferedReader getCsvReader() throws Exception {
+    BufferedReader getCsvReader() throws Exception {
         try {
             logger.info("Attempting to load CSV from URL: {}", MKB10_CSV_URL);
             return new BufferedReader(new InputStreamReader(new URL(MKB10_CSV_URL).openStream(), StandardCharsets.UTF_8));
