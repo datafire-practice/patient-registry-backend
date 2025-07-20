@@ -1,6 +1,7 @@
 package com.medical.registry_backend.controller;
 
 import com.medical.registry_backend.entity.Mkb10;
+import com.medical.registry_backend.repository.DiseaseRepository;
 import com.medical.registry_backend.repository.Mkb10Repository;
 import com.medical.registry_backend.service.Mkb10ServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,12 +29,18 @@ public class Mkb10ControllerCacheIntegrationTest {
     private Mkb10Repository mkb10Repository;
 
     @Autowired
+    private DiseaseRepository diseaseRepository; // Добавляем DiseaseRepository
+
+    @Autowired
     private Mkb10ServiceImpl mkb10Service;
 
     private final String testCode = "A00.0";
 
     @BeforeEach
     void setUp() {
+        // Сначала очищаем таблицу DISEASES, чтобы избежать нарушения ссылочной целостности
+        diseaseRepository.deleteAll();
+        // Затем очищаем таблицу MKB10
         mkb10Repository.deleteAll();
 
         Mkb10 mkb10 = new Mkb10();

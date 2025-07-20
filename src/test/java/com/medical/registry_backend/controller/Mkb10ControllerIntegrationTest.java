@@ -113,7 +113,7 @@ class Mkb10ControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
-                .andExpect(content().string("MKB10 data update initiated"))
+                .andExpect(content().string("Обновление справочника МКБ-10 инициировано"))
                 .andReturn();
 
         String content = result.getResponse().getContentAsString();
