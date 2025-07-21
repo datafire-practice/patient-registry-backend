@@ -9,11 +9,11 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // Разрешить CORS для всех эндпоинтов
-                .allowedOrigins("http://localhost:5173") // Укажите домены фронтенда
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Разрешённые методы
-                .allowedHeaders("*") // Разрешённые заголовки
-                .allowCredentials(true) // Разрешить отправку куки, если нужно
-                .maxAge(3600); // Время кэширования CORS-запросов
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:5173")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 }

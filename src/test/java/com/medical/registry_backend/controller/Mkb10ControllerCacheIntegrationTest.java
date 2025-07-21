@@ -29,7 +29,7 @@ public class Mkb10ControllerCacheIntegrationTest {
     private Mkb10Repository mkb10Repository;
 
     @Autowired
-    private DiseaseRepository diseaseRepository; // Добавляем DiseaseRepository
+    private DiseaseRepository diseaseRepository;
 
     @Autowired
     private Mkb10ServiceImpl mkb10Service;
@@ -38,9 +38,8 @@ public class Mkb10ControllerCacheIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Сначала очищаем таблицу DISEASES, чтобы избежать нарушения ссылочной целостности
+
         diseaseRepository.deleteAll();
-        // Затем очищаем таблицу MKB10
         mkb10Repository.deleteAll();
 
         Mkb10 mkb10 = new Mkb10();
@@ -51,15 +50,12 @@ public class Mkb10ControllerCacheIntegrationTest {
 
     @Test
     void testManualCaffeineCachingOnGetByCode() throws Exception {
-        // Убедимся, что до запроса кэш пуст (get напрямую из кэша вернёт null)
         Mkb10 cachedBefore = mkb10Service.getMkb10ByCode(testCode);
         assertNotNull(cachedBefore, "Первый вызов должен вернуть объект");
 
-        // Повторный вызов (из кэша Caffeine внутри сервиса)
         Mkb10 cachedAfter = mkb10Service.getMkb10ByCode(testCode);
         assertSame(cachedBefore, cachedAfter, "Должен быть возвращён тот же объект из кэша");
 
-        // Теперь вызываем через контроллер и убеждаемся, что всё корректно работает
         mockMvc.perform(get("/dictionary/mkb10/" + testCode)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
