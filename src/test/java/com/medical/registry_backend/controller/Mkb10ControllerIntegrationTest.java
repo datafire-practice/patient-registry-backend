@@ -40,7 +40,6 @@ class Mkb10ControllerIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Очистка таблиц в правильном порядке: сначала DISEASES, затем MKB10
         diseaseRepository.deleteAll();
         mkb10Repository.deleteAll();
 

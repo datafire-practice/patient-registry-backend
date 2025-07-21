@@ -31,7 +31,7 @@ public class Mkb10ServiceImpl implements Mkb10Service {
 
     private static final Logger logger = LoggerFactory.getLogger(Mkb10ServiceImpl.class);
     private static final String MKB10_CSV_URL = "https://raw.githubusercontent.com/ak4nv/mkb10/master/mkb10.csv";
-    private static final String FALLBACK_CSV_PATH = "classpath:mkb10.csv"; // Резервный локальный файл
+    private static final String FALLBACK_CSV_PATH = "classpath:mkb10.csv";
     private static final Pattern CODE_PATTERN = Pattern.compile("^[A-Z]\\d{2}\\.\\d$");
 
     private final Mkb10Repository mkb10Repository;

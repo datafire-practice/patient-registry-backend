@@ -15,17 +15,15 @@ public class CacheConfig {
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCaffeine(caffeineCacheBuilder());
-        // Укажите имена кэшей, если хотите ограничить их
-//        cacheManager.setCacheNames("patients", "diseases", "mkb10");
         return cacheManager;
     }
 
     private Caffeine<Object, Object> caffeineCacheBuilder() {
         return Caffeine.newBuilder()
-                .initialCapacity(100) // Начальная емкость кэша
-                .maximumSize(500) // Максимальное количество записей в кэше
-                .expireAfterAccess(10, TimeUnit.MINUTES) // Время жизни записи после последнего доступа
-                .expireAfterWrite(15, TimeUnit.MINUTES) // Время жизни записи после записи
-                .recordStats(); // Включение статистики (опционально)
+                .initialCapacity(100)
+                .maximumSize(500)
+                .expireAfterAccess(10, TimeUnit.MINUTES)
+                .expireAfterWrite(15, TimeUnit.MINUTES)
+                .recordStats();
     }
 }
